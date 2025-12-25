@@ -1,0 +1,4 @@
+2025-12-26 02:54:30,960 [INFO] Fetched 31661 events.
+2025-12-26 02:54:33,574 [INFO] Uploaded image to S3: event/ticketmaster/af1c5fe0-3aca-48de-8d36-0c14945d17b2
+2025-12-26 02:54:34,003 [INFO] Updated DB for af1c5fe0-3aca-48de-8d36-0c14945d17b2
+2025-12-26 02:54:35,044 [INFO] Uploaded image to S3: event/ticketmaster/eddbb714-0cca-4271-bdfb-8c9970288d39
