@@ -1,0 +1,35 @@
+name: Sync Ticketmaster Images
+
+on:
+  workflow_dispatch:      # manual trigger
+  schedule:
+    - cron: "*/15 * * * *"   # runs every 15 minutes (change if needed)
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    env:
+      DB_URL: ${{ secrets.DB_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3 psycopg2-binary requests python-dotenv
+
+      - name: Run sync script
+        run: python ticketmaster_image_downloader.py --skip-exists
