@@ -1,0 +1,394 @@
+{
+    "id": "Z698xZq2Z16va9Od8z",
+    "url": "https://www.ticketmaster.se/event/earl-sweatshirt-3lworldtour-tickets/1257803438?language=en-us",
+    "name": "Earl Sweatshirt - 3LWorldTour",
+    "test": false,
+    "type": "event",
+    "dates": {
+        "start": {
+            "dateTBA": false,
+            "dateTBD": false,
+            "timeTBA": false,
+            "dateTime": "2026-01-23T20:00:00Z",
+            "localDate": "2026-01-23",
+            "localTime": "21:00:00",
+            "noSpecificTime": false
+        },
+        "status": {
+            "code": "onsale"
+        },
+        "timezone": "Europe/Stockholm",
+        "spanMultipleDays": false
+    },
+    "sales": {
+        "public": {
+            "startTBA": false,
+            "startTBD": false,
+            "endDateTime": "2026-01-23T20:30:00Z",
+            "startDateTime": "2025-09-05T08:00:00Z"
+        }
+    },
+    "_links": {
+        "self": {
+            "href": "/discovery/v2/events/Z698xZq2Z16va9Od8z?locale=en-us"
+        },
+        "venues": [
+            {
+                "href": "/discovery/v2/venues/Z698xZq2Za7j6?locale=en-us"
+            }
+        ],
+        "attractions": [
+            {
+                "href": "/discovery/v2/attractions/K8vZ9172De0?locale=en-us"
+            }
+        ]
+    },
+    "images": [
+        {
+            "url": "https://s1.ticketm.net/img/tat/cft1/201311/18/319920.jpg",
+            "ratio": "4_3",
+            "width": 305,
+            "height": 225,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_SOURCE",
+            "ratio": "3_2",
+            "width": 2048,
+            "height": 1365,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RETINA_PORTRAIT_16_9.jpg",
+            "ratio": "16_9",
+            "width": 640,
+            "height": 360,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_EVENT_DETAIL_PAGE_16_9.jpg",
+            "ratio": "16_9",
+            "width": 205,
+            "height": 115,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RETINA_PORTRAIT_3_2.jpg",
+            "ratio": "3_2",
+            "width": 640,
+            "height": 427,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_ARTIST_PAGE_3_2.jpg",
+            "ratio": "3_2",
+            "width": 305,
+            "height": 203,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RETINA_LANDSCAPE_16_9.jpg",
+            "ratio": "16_9",
+            "width": 1136,
+            "height": 639,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_TABLET_LANDSCAPE_16_9.jpg",
+            "ratio": "16_9",
+            "width": 1024,
+            "height": 576,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RECOMENDATION_16_9.jpg",
+            "ratio": "16_9",
+            "width": 100,
+            "height": 56,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "ratio": "16_9",
+            "width": 2048,
+            "height": 1152,
+            "fallback": false
+        },
+        {
+            "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_TABLET_LANDSCAPE_3_2.jpg",
+            "ratio": "3_2",
+            "width": 1024,
+            "height": 683,
+            "fallback": false
+        }
+    ],
+    "locale": "en-us",
+    "promoter": {
+        "id": "7817",
+        "name": "Lugerinc AB"
+    },
+    "_embedded": {
+        "venues": [
+            {
+                "id": "Z698xZq2Za7j6",
+                "url": "https://www.ticketmaster.se/venue/slaktkyrkan-stockholm-biljetter/sla7/632",
+                "city": {
+                    "name": "Stockholm"
+                },
+                "test": false,
+                "type": "venue",
+                "_links": {
+                    "self": {
+                        "href": "/discovery/v2/venues/Z698xZq2Za7j6?locale=en-us"
+                    }
+                },
+                "locale": "en-us",
+                "address": {
+                    "line1": "Styckmästergatan 10"
+                },
+                "country": {
+                    "name": "Sweden",
+                    "countryCode": "SE"
+                },
+                "location": {
+                    "latitude": "59.29224",
+                    "longitude": "18.08012"
+                },
+                "timezone": "Europe/Stockholm",
+                "postalCode": "121 62",
+                "upcomingEvents": {
+                    "_total": 6,
+                    "mfx-se": 6,
+                    "_filtered": 0
+                }
+            }
+        ],
+        "attractions": [
+            {
+                "id": "K8vZ9172De0",
+                "url": "https://www.ticketmaster.com/earl-sweatshirt-tickets/artist/1744608",
+                "name": "Earl Sweatshirt",
+                "test": false,
+                "type": "attraction",
+                "_links": {
+                    "self": {
+                        "href": "/discovery/v2/attractions/K8vZ9172De0?locale=en-us"
+                    }
+                },
+                "images": [
+                    {
+                        "url": "https://s1.ticketm.net/img/tat/cft1/201311/18/319920.jpg",
+                        "ratio": "4_3",
+                        "width": 305,
+                        "height": 225,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_SOURCE",
+                        "ratio": "3_2",
+                        "width": 2048,
+                        "height": 1365,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RETINA_PORTRAIT_16_9.jpg",
+                        "ratio": "16_9",
+                        "width": 640,
+                        "height": 360,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_EVENT_DETAIL_PAGE_16_9.jpg",
+                        "ratio": "16_9",
+                        "width": 205,
+                        "height": 115,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RETINA_PORTRAIT_3_2.jpg",
+                        "ratio": "3_2",
+                        "width": 640,
+                        "height": 427,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_ARTIST_PAGE_3_2.jpg",
+                        "ratio": "3_2",
+                        "width": 305,
+                        "height": 203,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RETINA_LANDSCAPE_16_9.jpg",
+                        "ratio": "16_9",
+                        "width": 1136,
+                        "height": 639,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_TABLET_LANDSCAPE_16_9.jpg",
+                        "ratio": "16_9",
+                        "width": 1024,
+                        "height": 576,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_RECOMENDATION_16_9.jpg",
+                        "ratio": "16_9",
+                        "width": 100,
+                        "height": 56,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+                        "ratio": "16_9",
+                        "width": 2048,
+                        "height": 1152,
+                        "fallback": false
+                    },
+                    {
+                        "url": "https://s1.ticketm.net/dam/a/469/f6db8121-664a-4972-9853-b1eb4d318469_TABLET_LANDSCAPE_3_2.jpg",
+                        "ratio": "3_2",
+                        "width": 1024,
+                        "height": 683,
+                        "fallback": false
+                    }
+                ],
+                "locale": "en-us",
+                "externalLinks": {
+                    "wiki": [
+                        {
+                            "url": "https://en.wikipedia.org/wiki/Earl_Sweatshirt"
+                        }
+                    ],
+                    "itunes": [
+                        {
+                            "url": "https://music.apple.com/us/artist/earl-sweatshirt/445693504"
+                        }
+                    ],
+                    "spotify": [
+                        {
+                            "url": "https://open.spotify.com/artist/3A5tHz1SfngyOZM2gItYKu"
+                        }
+                    ],
+                    "twitter": [
+                        {
+                            "url": "https://twitter.com/earlxsweat"
+                        }
+                    ],
+                    "youtube": [
+                        {
+                            "url": "https://www.youtube.com/user/EarlxSweatshirtMusic"
+                        }
+                    ],
+                    "facebook": [
+                        {
+                            "url": "https://www.facebook.com/EarlSweatshirtMusic"
+                        }
+                    ],
+                    "homepage": [
+                        {
+                            "url": "http://www.earlsweatshirt.com/"
+                        }
+                    ],
+                    "instagram": [
+                        {
+                            "url": "http://instagram.com/soapmanwun"
+                        }
+                    ],
+                    "musicbrainz": [
+                        {
+                            "id": "8b22acd6-20e6-4463-a75c-c14b5cfdb666",
+                            "url": "https://musicbrainz.org/artist/8b22acd6-20e6-4463-a75c-c14b5cfdb666"
+                        }
+                    ]
+                },
+                "upcomingEvents": {
+                    "_total": 19,
+                    "mfx-cz": 1,
+                    "mfx-de": 5,
+                    "mfx-dk": 1,
+                    "mfx-it": 2,
+                    "mfx-nl": 1,
+                    "mfx-no": 2,
+                    "mfx-se": 2,
+                    "_filtered": 0,
+                    "ticketnet": 1,
+                    "ticketmaster": 4
+                },
+                "classifications": [
+                    {
+                        "type": {
+                            "id": "KZAyXgnZfZ7v7la",
+                            "name": "Individual"
+                        },
+                        "genre": {
+                            "id": "KnvZfZ7vAv1",
+                            "name": "Hip-Hop/Rap"
+                        },
+                        "family": false,
+                        "primary": true,
+                        "segment": {
+                            "id": "KZFzniwnSyZfZ7v7nJ",
+                            "name": "Music"
+                        },
+                        "subType": {
+                            "id": "KZFzBErXgnZfZ7vAd7",
+                            "name": "Musician"
+                        },
+                        "subGenre": {
+                            "id": "KZazBEonSMnZfZ7vkvl",
+                            "name": "Hip-Hop/Rap"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "promoters": [
+        {
+            "id": "7817",
+            "name": "Lugerinc AB"
+        }
+    ],
+    "ticketing": {
+        "safeTix": {
+            "enabled": false
+        }
+    },
+    "nameOrigin": "custom",
+    "classifications": [
+        {
+            "genre": {
+                "id": "KnvZfZ7vAv1",
+                "name": "Hip-Hop/Rap"
+            },
+            "family": false,
+            "primary": true,
+            "segment": {
+                "id": "KZFzniwnSyZfZ7v7nJ",
+                "name": "Music"
+            },
+            "subGenre": {
+                "id": "KZazBEonSMnZfZ7vkvl",
+                "name": "Hip-Hop/Rap"
+            }
+        },
+        {
+            "genre": {
+                "id": "KnvZfZ7vAvl",
+                "name": "Other"
+            },
+            "family": false,
+            "primary": false,
+            "segment": {
+                "id": "KZFzniwnSyZfZ7v7nJ",
+                "name": "Music"
+            },
+            "subGenre": {
+                "id": "KZazBEonSMnZfZ7vk1I",
+                "name": "Other"
+            }
+        }
+    ]
+}

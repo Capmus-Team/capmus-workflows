@@ -2,3 +2,10 @@
 2025-12-26 02:54:33,574 [INFO] Uploaded image to S3: event/ticketmaster/af1c5fe0-3aca-48de-8d36-0c14945d17b2
 2025-12-26 02:54:34,003 [INFO] Updated DB for af1c5fe0-3aca-48de-8d36-0c14945d17b2
 2025-12-26 02:54:35,044 [INFO] Uploaded image to S3: event/ticketmaster/eddbb714-0cca-4271-bdfb-8c9970288d39
+2025-12-26 03:00:26,384 [INFO] Fetched 1 events.
+2025-12-26 03:00:28,098 [ERROR] Failed downloading image from https://s1.ticketm.net/img/tat/cft1/201311/18/319920.jpg: 404 Client Error: Not Found for url: https://s1.ticketm.net/img/tat/cft1/201311/18/319920.jpg
+2025-12-26 03:00:28,100 [ERROR] Download failed for 84b49fd0-e347-4774-a41f-8305d7cf3462
+2025-12-26 03:01:22,781 [INFO] Fetched 31661 events.
+2025-12-26 03:01:24,788 [INFO] Uploaded image to S3: event/ticketmaster/eddbb714-0cca-4271-bdfb-8c9970288d39
+2025-12-26 03:01:25,246 [INFO] Updated DB for eddbb714-0cca-4271-bdfb-8c9970288d39
+2025-12-26 03:01:26,307 [INFO] Uploaded image to S3: event/ticketmaster/e8542cec-d51d-464c-8838-3b003ecfd32d
