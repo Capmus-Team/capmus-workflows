@@ -1,0 +1,33 @@
+name: Daily Meetup Photo Downloader
+
+on:
+  schedule:
+    # Run 7 hours after Meetup sync: 6pm UTC (10am PST) on Monday and Thursday
+    - cron: '0 18 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  run-photo-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r staging_meetup_photo_downloader/requirements.txt
+
+      - name: Run photo downloader
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+        run: python staging_meetup_photo_downloader/photo_downloader.py
