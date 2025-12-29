@@ -1,4 +1,4 @@
-name: Daily Photo Downloader
+name: Daily Meetup Photo Downloader
 
 on:
   schedule:
