@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r staging_localist_event_feed/requirements.txt
 
       - name: Run Localist event sync
         run: python staging_localist_event_feed/fetch_events.py --localist-days 30
