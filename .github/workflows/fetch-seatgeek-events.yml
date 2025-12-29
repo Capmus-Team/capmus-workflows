@@ -1,0 +1,51 @@
+name: Fetch SeatGeek Events
+
+on:
+  # Run every day at 5:00 AM PST (13:00 UTC)
+  # PST is UTC-8, so 5am PST = 1pm UTC
+  # Note: During PDT (Daylight Saving Time), 5am PDT = 12pm UTC
+  schedule:
+    - cron: '0 13 * * *'  # 5am PST / 1pm UTC
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  fetch-events:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r seatgeek-api/requirements.txt
+
+      - name: Fetch SeatGeek events
+        env:
+          SEATGEEK_CLIENT_ID: ${{ secrets.SEATGEEK_CLIENT_ID }}
+          SEATGEEK_CLIENT_SECRET: ${{ secrets.SEATGEEK_CLIENT_SECRET }}
+          DATABASE_URL: ${{ secrets.DB_URL }}
+          LOG_LEVEL: INFO
+          API_RATE_LIMIT: 5
+          USE_STREAMING_MODE: true
+          USE_CONNECTION_POOLING: false
+          STREAMING_BATCH_SIZE: 1000
+        run: |
+          python seatgeek-api/fetch_seatgeek_events.py
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seatgeek-fetcher-logs-${{ github.run_number }}
+          path: seatgeek_fetcher.log
+          retention-days: 30
