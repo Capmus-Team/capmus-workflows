@@ -1,0 +1,67 @@
+name: Daily Meetup Event Sync
+
+on:
+  # Schedule to run daily at 3am Pacific Time (11am UTC)
+  # Note: GitHub Actions uses UTC time
+  # 3am PST = 11am UTC | 3am PDT = 10am UTC
+  schedule:
+    - cron: '0 11 * * 1,4'  # 11am UTC on Monday and Thursday = 3am PST
+  
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      radius:
+        description: 'Search radius in miles'
+        required: false
+        default: '10'
+      university_limit:
+        description: 'Limit number of universities (leave empty for all)'
+        required: false
+        default: ''
+
+jobs:
+  sync-meetup-events:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r staging_meetup_extract/requirements.txt
+      
+      - name: Run Meetup event sync
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          MEETUP_API_TOKEN: ${{ secrets.MEETUP_API_TOKEN }}
+          MEETUP_API_ENDPOINT: ${{ secrets.MEETUP_API_ENDPOINT }}
+          LOG_LEVEL: INFO
+          UPSERT_BATCH_SIZE: 100
+        run: |
+          python staging_meetup_extract/fetch_university_events.py \
+            --radius ${{ github.event.inputs.radius || '10' }} \
+            ${{ github.event.inputs.university_limit && format('--university-limit {0}', github.event.inputs.university_limit) || '' }}
+      
+      - name: Verify sync results
+        if: success()
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          MEETUP_API_TOKEN: ${{ secrets.MEETUP_API_TOKEN }}
+          MEETUP_API_ENDPOINT: ${{ secrets.MEETUP_API_ENDPOINT }}
+        run: |
+          python staging_meetup_extract/verify_database.py
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Meetup sync failed! Check the logs above for details."
+          exit 1
+
