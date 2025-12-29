@@ -1,0 +1,28 @@
+name: Scheduled Fetch Events
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-fetch-events:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      LOG_LEVEL: "DEBUG"
+      UPSERT_BATCH_SIZE: 200
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Localist event sync
+        run: python staging_localist_event_feed/fetch_events.py --localist-days 30
