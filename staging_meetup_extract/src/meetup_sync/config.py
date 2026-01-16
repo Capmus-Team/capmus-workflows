@@ -41,7 +41,7 @@ class Config:
     upsert_batch_size: int = 100
     events_per_page: int = 100
     max_pages_per_university: int = 10
-    max_radius_miles: int = 100
+    max_radius_miles: int = 20
     
     @classmethod
     def from_environment(cls) -> "Config":
