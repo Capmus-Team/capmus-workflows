@@ -228,10 +228,11 @@ class PhotoSyncManager:
                     SET media = v.media_list,
                         time_modified = NOW()
                     FROM (VALUES %s) AS v(source_api_id, media_list)
-                    WHERE p.source_api_id = v.source_api_id
+                    WHERE p.source_api_id = v.source_api_id::uuid
                       AND p.media IS NULL
                     """,
-                    values
+                    values,
+                    template="(%s::uuid, %s)"
                 )
 
                 conn.commit()
