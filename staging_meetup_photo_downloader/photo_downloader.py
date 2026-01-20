@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from typing import Dict, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from requests.exceptions import HTTPError
 from psycopg2.errors import DeadlockDetected
 from psycopg2.extras import execute_values
 
@@ -43,10 +42,6 @@ RETRY_BACKOFF = 2  # seconds
 # =====================================================================
 # MAIN CLASS
 # =====================================================================
-
-class NonRetryableError(Exception):
-    pass
-
 
 class PhotoSyncManager:
 
@@ -141,8 +136,6 @@ class PhotoSyncManager:
         for attempt in range(RETRY_ATTEMPTS):
             try:
                 return func(*args)
-            except NonRetryableError:
-                raise
             except Exception as e:
                 last_exc = e
                 sleep = RETRY_BACKOFF * (attempt + 1)
@@ -165,12 +158,7 @@ class PhotoSyncManager:
 
     def download_image(self, url: str) -> bytes:
         resp = self.http.get(url, timeout=30)
-        try:
-            resp.raise_for_status()
-        except HTTPError as e:
-            if resp.status_code == 403:
-                raise NonRetryableError(f"403 Forbidden for {url}") from e
-            raise
+        resp.raise_for_status()
         return resp.content
 
     def upload_to_s3(self, filename: str, data: bytes, content_type: str):
@@ -227,14 +215,14 @@ class PhotoSyncManager:
                     cur,
                     """
                     UPDATE staging_meetup.post_transform AS p
-                    SET media = v.media_list,
+                    SET media = COALESCE(v.media_list, ARRAY[]::text[]),
                         time_modified = NOW()
                     FROM (VALUES %s) AS v(source_api_id, media_list)
                     WHERE p.source_api_id = v.source_api_id::uuid
                       AND p.media IS NULL
                     """,
                     values,
-                    template="(%s::uuid, %s)"
+                    template="(%s::uuid, %s::text[])"
                 )
 
                 conn.commit()
