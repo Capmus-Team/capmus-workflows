@@ -50,8 +50,9 @@ class NonRetryableError(Exception):
 
 class PhotoSyncManager:
 
-    def __init__(self, batch_size: int = 100):
+    def __init__(self, batch_size: int = 100, log_updated_ids: bool = False):
         self.batch_size = batch_size
+        self.log_updated_ids = log_updated_ids
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
         self.http = requests.Session()
         self.http.headers.update({
@@ -239,6 +240,9 @@ class PhotoSyncManager:
                 conn.commit()
                 elapsed = time.perf_counter() - start
                 logger.info(f"Batch update ({len(updates)} rows) completed in {elapsed:.2f}s")
+                if self.log_updated_ids:
+                    updated_ids = [u["event_instance_id"] for u in updates]
+                    logger.info(f"Updated event_instance_id: {updated_ids}")
                 return
 
             except DeadlockDetected:
@@ -322,10 +326,14 @@ def main():
     parser.add_argument("--continuous", action="store_true")
     parser.add_argument("--poll-interval", type=int, default=60)
     parser.add_argument("--max-runs", type=int, default=None)
+    parser.add_argument("--log-updated-ids", action="store_true")
 
     args = parser.parse_args()
 
-    sync = PhotoSyncManager(batch_size=args.batch_size)
+    sync = PhotoSyncManager(
+        batch_size=args.batch_size,
+        log_updated_ids=args.log_updated_ids
+    )
 
     if args.continuous:
         runs = 0
