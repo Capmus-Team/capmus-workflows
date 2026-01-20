@@ -214,6 +214,7 @@ class PhotoSyncManager:
             conn = None
             cur = None
             try:
+                start = time.perf_counter()
                 conn = self._get_db()
                 cur = conn.cursor()
 
@@ -236,6 +237,8 @@ class PhotoSyncManager:
                 )
 
                 conn.commit()
+                elapsed = time.perf_counter() - start
+                logger.info(f"Batch update ({len(updates)} rows) completed in {elapsed:.2f}s")
                 return
 
             except DeadlockDetected:
@@ -258,8 +261,11 @@ class PhotoSyncManager:
     # MAIN PROCESS
     # -----------------------------------------------------------------
     def process_events(self, limit=None):
+        total_start = time.perf_counter()
+        fetch_start = time.perf_counter()
         events = self.fetch_events(limit)
-        logger.info("Starting photo sync job")
+        fetch_elapsed = time.perf_counter() - fetch_start
+        logger.info(f"Starting photo sync job (fetch {len(events)} in {fetch_elapsed:.2f}s)")
 
         db_updates = []
 
@@ -301,7 +307,8 @@ class PhotoSyncManager:
         if db_updates:
             self.batch_update(db_updates)
 
-        logger.info("Photo sync job completed successfully")
+        total_elapsed = time.perf_counter() - total_start
+        logger.info(f"Photo sync job completed successfully in {total_elapsed:.2f}s")
 
 
 # =====================================================================
