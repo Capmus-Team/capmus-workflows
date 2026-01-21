@@ -45,7 +45,7 @@ RETRY_BACKOFF = 2  # seconds
 
 class PhotoSyncManager:
 
-    def __init__(self, batch_size: int = 100, log_updated_ids: bool = False):
+    def __init__(self, batch_size: int = 800, log_updated_ids: bool = False):
         self.batch_size = batch_size
         self.log_updated_ids = log_updated_ids
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
@@ -310,7 +310,7 @@ class PhotoSyncManager:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--batch-size", type=int, default=100)
+    parser.add_argument("--batch-size", type=int, default=800)
     parser.add_argument("--continuous", action="store_true")
     parser.add_argument("--poll-interval", type=int, default=60)
     parser.add_argument("--max-runs", type=int, default=None)
