@@ -9,7 +9,7 @@ import psycopg2
 import psycopg2.extras
 from urllib.parse import urlparse
 from dotenv import load_dotenv
-from typing import Optional, Union
+from typing import Union
 
 # -------------------------------------------------------------------
 # CONFIG
@@ -29,7 +29,7 @@ if not DB_URL:
 S3_PREFIX = "event/ticketmaster/"
 CDN_BASE_URL = "https://cdn.capmus.com/event/ticketmaster/"
 
-ADVISORY_LOCK_ID = 3001  # Ticketmaster image downloader
+ADVISORY_LOCK_ID = 3001
 BATCH_SIZE = 200
 
 logging.basicConfig(
@@ -51,13 +51,6 @@ class S3Client:
             region_name=AWS_REGION
         )
 
-    def exists(self, key: str) -> bool:
-        try:
-            self.client.head_object(Bucket=AWS_BUCKET, Key=key)
-            return True
-        except Exception:
-            return False
-
     def upload(self, key: str, data: bytes, content_type: str):
         self.client.put_object(
             Bucket=AWS_BUCKET,
@@ -75,16 +68,13 @@ def download_image(url: str) -> Union[bytes, str, None]:
     """
     Returns:
       - bytes        → success
-      - "not_found"  → 404 / 410 (permanent)
+      - "not_found"  → 404 / 410
       - None         → transient failure
     """
     try:
         res = requests.get(
             url,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "image/*"
-            },
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*"},
             timeout=20
         )
 
@@ -124,30 +114,28 @@ def main():
     )
     conn.autocommit = False
 
+    completed = failed = not_found = 0
+
     try:
         # ------------------------------------------------------------
-        # Acquire advisory lock
+        # Advisory lock
         # ------------------------------------------------------------
         with conn.cursor() as cur:
             logger.info("Acquiring advisory lock...")
             cur.execute("SELECT pg_advisory_lock(%s)", (ADVISORY_LOCK_ID,))
 
-        # ------------------------------------------------------------
-        # Fetch rows
-        # ------------------------------------------------------------
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             query = """
                 SELECT id, data
                 FROM staging_ticketmaster.event
-                WHERE aws_photo_downloaded IS DISTINCT FROM 'completed'
-                  AND aws_photo_downloaded IS DISTINCT FROM 'not_found'
+                WHERE aws_photo_downloaded NOT IN ('completed', 'not_found')
                   AND data->'images' IS NOT NULL
                 ORDER BY id
                 FOR UPDATE SKIP LOCKED
                 LIMIT %s
             """
 
-            limit = args.limit if args.limit else BATCH_SIZE
+            limit = args.limit or BATCH_SIZE
             cur.execute(query, (limit,))
             rows = cur.fetchall()
 
@@ -155,81 +143,59 @@ def main():
 
             updates = []
 
-            # ------------------------------------------------------------
-            # Process each row
-            # ------------------------------------------------------------
             for row in rows:
                 event_id = row["id"]
                 images = row["data"].get("images", [])
 
                 if not images or not images[0].get("url"):
-                    updates.append((
-                        None,
-                        "not_found",
-                        "Missing image URL",
-                        event_id
-                    ))
+                    updates.append((None, "not_found", event_id))
+                    not_found += 1
                     continue
 
                 url = images[0]["url"]
-                s3_key = f"{S3_PREFIX}{event_id}"
+                result = download_image(url)
 
-                # Download only if not already in S3
-                if not s3.exists(s3_key):
-                    result = download_image(url)
+                if result == "not_found":
+                    updates.append((None, "not_found", event_id))
+                    not_found += 1
+                    continue
 
-                    if result == "not_found":
-                        updates.append((
-                            None,
-                            "not_found",
-                            f"Image not found: {url}",
-                            event_id
-                        ))
-                        continue
+                if result is None:
+                    updates.append((None, "failed", event_id))
+                    failed += 1
+                    continue
 
-                    if result is None:
-                        updates.append((
-                            None,
-                            "failed",
-                            f"Transient image error: {url}",
-                            event_id
-                        ))
-                        continue
+                s3.upload(
+                    f"{S3_PREFIX}{event_id}",
+                    result,
+                    content_type_from_url(url)
+                )
 
-                    # Successful download
-                    s3.upload(
-                        s3_key,
-                        result,
-                        content_type_from_url(url)
-                    )
-
-                # Success (either uploaded now or already existed)
                 updates.append((
                     f"{CDN_BASE_URL}{event_id}",
                     "completed",
-                    None,
                     event_id
                 ))
+                completed += 1
 
-            # ------------------------------------------------------------
-            # Persist updates
-            # ------------------------------------------------------------
             if updates:
                 psycopg2.extras.execute_batch(
                     cur,
                     """
                     UPDATE staging_ticketmaster.event
-                    SET
-                        aws_photo_link = %s,
-                        aws_photo_downloaded = %s,
-                        aws_photo_error = %s
+                    SET aws_photo_link = %s,
+                        aws_photo_downloaded = %s
                     WHERE id = %s
                     """,
                     updates
                 )
 
             conn.commit()
-            logger.info("Ticketmaster image downloader completed successfully")
+
+            logger.info(
+                f"Run summary → completed={completed}, "
+                f"not_found={not_found}, failed={failed}"
+            )
 
     except Exception as e:
         conn.rollback()
