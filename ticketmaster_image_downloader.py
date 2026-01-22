@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import time
 import logging
 import requests
 import argparse
@@ -10,7 +9,7 @@ import psycopg2
 import psycopg2.extras
 from urllib.parse import urlparse
 from dotenv import load_dotenv
-from psycopg2.errors import DeadlockDetected
+from typing import Optional
 
 # -------------------------------------------------------------------
 # CONFIG
@@ -24,13 +23,14 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.getenv("AWS_REGION")
 AWS_BUCKET = os.getenv("AWS_BUCKET")
 
+if not DB_URL:
+    raise RuntimeError("Missing DB_URL environment variable")
+
 S3_PREFIX = "event/ticketmaster/"
 CDN_BASE_URL = "https://cdn.capmus.com/event/ticketmaster/"
-ADVISORY_LOCK_ID = 3001   # Ticketmaster image downloader
 
+ADVISORY_LOCK_ID = 3001  # Ticketmaster image downloader lock
 BATCH_SIZE = 200
-RETRY_ATTEMPTS = 3
-RETRY_BACKOFF = 2
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,7 +39,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # -------------------------------------------------------------------
-# S3
+# S3 CLIENT
 # -------------------------------------------------------------------
 
 class S3Client:
@@ -71,14 +71,31 @@ class S3Client:
 # HELPERS
 # -------------------------------------------------------------------
 
-def download_image(url: str) -> bytes:
-    res = requests.get(
-        url,
-        headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*"},
-        timeout=20
-    )
-    res.raise_for_status()
-    return res.content
+def download_image(url: str) -> Optional[bytes]:
+    """
+    Best-effort image download.
+    Returns None on ANY failure (404, timeout, 403, etc).
+    """
+    try:
+        res = requests.get(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "image/*"
+            },
+            timeout=20
+        )
+
+        if res.status_code == 404:
+            logger.warning(f"Image not found (404): {url}")
+            return None
+
+        res.raise_for_status()
+        return res.content
+
+    except requests.RequestException as e:
+        logger.warning(f"Image download failed: {url} → {e}")
+        return None
 
 def content_type_from_url(url: str) -> str:
     path = urlparse(url).path.lower()
@@ -93,36 +110,36 @@ def content_type_from_url(url: str) -> str:
 # -------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Ticketmaster image downloader")
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
 
     s3 = S3Client()
 
-    conn = psycopg2.connect(DB_URL, application_name="ticketmaster_image_downloader")
+    conn = psycopg2.connect(
+        DB_URL,
+        application_name="ticketmaster_image_downloader"
+    )
     conn.autocommit = False
 
-    with conn.cursor() as cur:
-        logger.info("Acquiring advisory lock...")
-        cur.execute("SELECT pg_advisory_lock(%s)", (ADVISORY_LOCK_ID,))
-
     try:
+        with conn.cursor() as cur:
+            logger.info("Acquiring advisory lock...")
+            cur.execute("SELECT pg_advisory_lock(%s)", (ADVISORY_LOCK_ID,))
+
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             query = """
                 SELECT id, data
                 FROM staging_ticketmaster.event
                 WHERE aws_photo_downloaded IS DISTINCT FROM 'completed'
-                AND data->'images' IS NOT NULL
+                  AND data->'images' IS NOT NULL
                 ORDER BY id
                 FOR UPDATE SKIP LOCKED
+                LIMIT %s
             """
 
-            if args.limit:
-                query += f" LIMIT {args.limit}"
-            else:
-                query += f" LIMIT {BATCH_SIZE}"
-
-            cur.execute(query)
+            limit = args.limit if args.limit else BATCH_SIZE
+            cur.execute(query, (limit,))
             rows = cur.fetchall()
 
             logger.info(f"Fetched {len(rows)} events to process")
@@ -132,17 +149,31 @@ def main():
             for row in rows:
                 event_id = row["id"]
                 images = row["data"].get("images", [])
-                if not images:
+
+                if not images or not images[0].get("url"):
+                    updates.append((
+                        None,
+                        "failed",
+                        "Missing image URL",
+                        event_id
+                    ))
                     continue
 
-                url = images[0].get("url")
-                if not url:
-                    continue
-
+                url = images[0]["url"]
                 s3_key = f"{S3_PREFIX}{event_id}"
 
                 if not s3.exists(s3_key):
                     img = download_image(url)
+
+                    if not img:
+                        updates.append((
+                            None,
+                            "failed",
+                            f"Image download failed: {url}",
+                            event_id
+                        ))
+                        continue
+
                     s3.upload(
                         s3_key,
                         img,
@@ -152,6 +183,7 @@ def main():
                 updates.append((
                     f"{CDN_BASE_URL}{event_id}",
                     "completed",
+                    None,
                     event_id
                 ))
 
@@ -160,19 +192,17 @@ def main():
                     cur,
                     """
                     UPDATE staging_ticketmaster.event
-                    SET aws_photo_link = %s,
-                        aws_photo_downloaded = %s
+                    SET
+                        aws_photo_link = %s,
+                        aws_photo_downloaded = %s,
+                        aws_photo_error = %s
                     WHERE id = %s
                     """,
                     updates
                 )
 
             conn.commit()
-            logger.info("Ticketmaster image sync completed successfully")
-
-    except DeadlockDetected:
-        conn.rollback()
-        logger.warning("Deadlock detected, retrying later")
+            logger.info("Ticketmaster image downloader completed successfully")
 
     except Exception as e:
         conn.rollback()
