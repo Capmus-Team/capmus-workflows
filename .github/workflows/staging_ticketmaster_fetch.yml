@@ -5,6 +5,7 @@ on:
   workflow_dispatch:      # manual trigger
   schedule:
     - cron: "0 2 * * *"  # daily at 02:00 UTC
+    - cron: "0 14 * * *"  # 14:00 UTC
 
 jobs:
   load_ticketmaster:
