@@ -135,6 +135,21 @@ def main() -> None:
         type=int,
         help="Only process the specified feed source id"
     )
+    parser.add_argument(
+        "--worker-id",
+        type=int,
+        help="1-based worker index for sharding"
+    )
+    parser.add_argument(
+        "--worker-count",
+        type=int,
+        help="Total worker count for sharding"
+    )
+    parser.add_argument(
+        "--skip-locked",
+        action="store_true",
+        help="Skip universities locked by other transactions"
+    )
     args = parser.parse_args()
     
     # Validate arguments
@@ -144,6 +159,18 @@ def main() -> None:
         parser.error("--university-limit must be a positive integer")
     if args.feed_source is not None and args.feed_source < 1:
         parser.error("--feed-source must be a positive integer")
+    if (args.worker_id is None) != (args.worker_count is None):
+        parser.error("--worker-id and --worker-count must be used together")
+    if args.worker_count is not None and args.worker_count < 1:
+        parser.error("--worker-count must be a positive integer")
+    if args.worker_id is not None and args.worker_id < 1:
+        parser.error("--worker-id must be a positive integer")
+    if (
+        args.worker_id is not None
+        and args.worker_count is not None
+        and args.worker_id > args.worker_count
+    ):
+        parser.error("--worker-id must be <= --worker-count")
     
     # Load configuration and set up logging
     try:
@@ -168,9 +195,21 @@ def main() -> None:
         processed_universities = 0
         
         # Process each university
+        if args.worker_id is not None and args.worker_count is not None:
+            logger.info(
+                "Worker sharding enabled worker_id=%s worker_count=%s",
+                args.worker_id,
+                args.worker_count
+            )
+        if args.skip_locked:
+            logger.info("Row locking enabled (FOR UPDATE SKIP LOCKED)")
+
         for university in db_client.fetch_active_universities(
             limit=args.university_limit,
-            feed_source_id=args.feed_source
+            feed_source_id=args.feed_source,
+            worker_id=args.worker_id,
+            worker_count=args.worker_count,
+            skip_locked=args.skip_locked,
         ):
             try:
                 events_count = process_university(
