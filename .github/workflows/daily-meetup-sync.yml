@@ -19,12 +19,13 @@ on:
         required: false
         default: ''
 
+concurrency:
+  group: daily-meetup-sync-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sync-meetup-events:
     runs-on: ubuntu-latest
-    concurrency:
-      group: daily-meetup-sync
-      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
