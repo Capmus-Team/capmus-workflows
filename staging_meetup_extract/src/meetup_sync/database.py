@@ -67,7 +67,10 @@ class DatabaseClient:
     def fetch_active_universities(
         self,
         limit: Optional[int] = None,
-        feed_source_id: Optional[int] = None
+        feed_source_id: Optional[int] = None,
+        worker_id: Optional[int] = None,
+        worker_count: Optional[int] = None,
+        skip_locked: bool = False
     ) -> Iterator[University]:
         """
         Fetch active universities from database.
@@ -77,6 +80,9 @@ class DatabaseClient:
         Args:
             limit: Optional limit on number of universities
             feed_source_id: Optional filter for specific university
+            worker_id: Optional 1-based worker index for sharding
+            worker_count: Optional total worker count for sharding
+            skip_locked: Skip rows locked by other transactions
             
         Yields:
             University instances
@@ -96,18 +102,34 @@ class DatabaseClient:
             if feed_source_id is not None:
                 query_parts.append("AND id = %s")
                 params.append(feed_source_id)
+
+            if worker_id is not None and worker_count is not None:
+                query_parts.append("AND MOD(id, %s) = %s")
+                params.append(worker_count)
+                params.append(worker_id - 1)
             
             query_parts.append("ORDER BY id")
             
             if limit is not None:
                 query_parts.append("LIMIT %s")
                 params.append(limit)
+
+            if skip_locked:
+                query_parts.append("FOR UPDATE SKIP LOCKED")
             
             sql = "\n".join(query_parts)
             cur.execute(sql, params if params else None)
             rows = cur.fetchall()
         
-        logger.info("Discovered %s active universities", len(rows))
+        if worker_id is not None and worker_count is not None:
+            logger.info(
+                "Discovered %s active universities for worker %s/%s",
+                len(rows),
+                worker_id,
+                worker_count
+            )
+        else:
+            logger.info("Discovered %s active universities", len(rows))
         
         for row in rows:
             yield University(
