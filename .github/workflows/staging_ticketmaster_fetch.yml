@@ -4,12 +4,11 @@ name: Ticketmaster
 on:
   workflow_dispatch:      # manual trigger
   schedule:
-    - cron: "0 2 * * *"  # daily at 02:00 UTC
-    - cron: "0 14 * * *"  # 14:00 UTC
+    - cron: "0 * * * *"  # hourly
 
 concurrency:
-  group: staging-ticketmaster-fetch
-  cancel-in-progress: true
+  group: staging-ticketmaster-fetch-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   load_ticketmaster:

@@ -8,10 +8,10 @@ on:
         required: false
         default: "true"
   schedule:
-    - cron: "*/5 * * * *" # every 5 minutes
+    - cron: "0 * * * *" # hourly
 
 concurrency:
-  group: ticketmaster-image-sync
+  group: ticketmaster-image-sync-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

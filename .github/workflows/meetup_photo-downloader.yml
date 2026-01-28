@@ -2,12 +2,12 @@ name: meetup-photo-downloader
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 concurrency:
   group: meetup-photo-downloader
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run-photo-sync:

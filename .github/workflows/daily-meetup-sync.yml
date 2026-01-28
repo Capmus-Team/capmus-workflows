@@ -5,7 +5,7 @@ on:
   # Note: GitHub Actions uses UTC time
   # 3am PST = 11am UTC | 3am PDT = 10am UTC
   schedule:
-    - cron: '*/5 * * * *'  # every 5 minutes
+    - cron: '0 * * * *'  # hourly
   
   # Allow manual trigger from GitHub UI
   workflow_dispatch:
@@ -21,7 +21,7 @@ on:
 
 concurrency:
   group: daily-meetup-sync-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   sync-meetup-events:
