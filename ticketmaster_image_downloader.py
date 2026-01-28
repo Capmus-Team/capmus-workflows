@@ -104,6 +104,11 @@ def content_type_from_url(url: str) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Ticketmaster image downloader")
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--allow-concurrent",
+        action="store_true",
+        help="Allow concurrent workers by skipping advisory lock"
+    )
     args = parser.parse_args()
 
     s3 = S3Client()
@@ -115,14 +120,18 @@ def main():
     conn.autocommit = False
 
     completed = failed = not_found = 0
+    use_advisory_lock = not args.allow_concurrent
 
     try:
         # ------------------------------------------------------------
         # Advisory lock
         # ------------------------------------------------------------
-        with conn.cursor() as cur:
-            logger.info("Acquiring advisory lock...")
-            cur.execute("SELECT pg_advisory_lock(%s)", (ADVISORY_LOCK_ID,))
+        if use_advisory_lock:
+            with conn.cursor() as cur:
+                logger.info("Acquiring advisory lock...")
+                cur.execute("SELECT pg_advisory_lock(%s)", (ADVISORY_LOCK_ID,))
+        else:
+            logger.info("Skipping advisory lock (concurrent workers enabled)")
 
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             query = """
@@ -203,8 +212,9 @@ def main():
         raise
 
     finally:
-        with conn.cursor() as cur:
-            cur.execute("SELECT pg_advisory_unlock(%s)", (ADVISORY_LOCK_ID,))
+        if use_advisory_lock:
+            with conn.cursor() as cur:
+                cur.execute("SELECT pg_advisory_unlock(%s)", (ADVISORY_LOCK_ID,))
         conn.close()
 
 # -------------------------------------------------------------------

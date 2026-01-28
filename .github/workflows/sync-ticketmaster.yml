@@ -2,6 +2,11 @@ name: Sync Ticketmaster Images
 
 on:
   workflow_dispatch:
+    inputs:
+      run_if_fetch_missing:
+        description: "Only run if recent Ticketmaster fetch did NOT run"
+        required: false
+        default: "true"
   schedule:
     - cron: "*/15 * * * *" # every 15 minutes
 
@@ -12,8 +17,12 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        worker_id: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
+      TICKETMASTER_FETCH_LOOKBACK_MINUTES: 30
       DB_URL: ${{ secrets.DB_URL }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -22,17 +31,61 @@ jobs:
       PYTHONUNBUFFERED: "1"
 
     steps:
+      - name: Check recent Ticketmaster fetch run
+        id: fetch_check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runIfMissingRaw = context.payload?.inputs?.run_if_fetch_missing ?? "true";
+            const runIfMissing = String(runIfMissingRaw).toLowerCase() !== "false";
+            if (context.eventName === "workflow_dispatch" && !runIfMissing) {
+              core.setOutput("should_run", "true");
+              return;
+            }
+
+            const lookbackMinutes = parseInt(
+              process.env.TICKETMASTER_FETCH_LOOKBACK_MINUTES || "30",
+              10
+            );
+            const { owner, repo } = context.repo;
+            const workflow_id = "staging_ticketmaster_fetch.yml";
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id,
+              per_page: 1
+            });
+            const latest = runs.data.workflow_runs[0];
+            if (!latest) {
+              core.setOutput("should_run", "true");
+              return;
+            }
+            const startedAt = latest.run_started_at || latest.created_at;
+            const ageMinutes = (Date.now() - new Date(startedAt).getTime()) / 60000;
+            core.info(
+              `Latest Ticketmaster fetch started ${ageMinutes.toFixed(1)} minutes ago ` +
+              `(status=${latest.status}, conclusion=${latest.conclusion})`
+            );
+            core.setOutput(
+              "should_run",
+              ageMinutes <= lookbackMinutes ? "false" : "true"
+            );
+
       - uses: actions/checkout@v4
+        if: steps.fetch_check.outputs.should_run == 'true'
 
       - uses: actions/setup-python@v4
+        if: steps.fetch_check.outputs.should_run == 'true'
         with:
           python-version: "3.11"
 
       - name: Install dependencies
+        if: steps.fetch_check.outputs.should_run == 'true'
         run: |
           pip install --upgrade pip
           pip install boto3 psycopg2-binary requests python-dotenv
 
       - name: Run Ticketmaster Image Sync
+        if: steps.fetch_check.outputs.should_run == 'true'
         run: |
-          python ticketmaster_image_downloader.py
+          python ticketmaster_image_downloader.py --allow-concurrent

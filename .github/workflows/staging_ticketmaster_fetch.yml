@@ -34,3 +34,35 @@ jobs:
       - name: Run Ticketmaster loader
         run: |
           python staging_ticketmaster_fetch.py
+
+  sync-ticketmaster-images:
+    runs-on: ubuntu-latest
+    needs: load_ticketmaster
+    strategy:
+      fail-fast: false
+      matrix:
+        worker_id: [1, 2, 3, 4, 5, 6, 7, 8]
+
+    env:
+      DB_URL: ${{ secrets.DB_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install boto3 psycopg2-binary requests python-dotenv
+
+      - name: Run Ticketmaster Image Sync
+        run: |
+          python ticketmaster_image_downloader.py --allow-concurrent
