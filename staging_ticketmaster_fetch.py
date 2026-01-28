@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 ticketmaster_to_supabase.py
 Fetch Ticketmaster events and insert into Supabase table: staging_ticketmaster.event
@@ -11,6 +11,7 @@ import requests
 import psycopg2
 import psycopg2.extras
 import json
+import argparse
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 import sys
@@ -118,66 +119,97 @@ def get_university_alpha_codes(cur, supported_countries):
     cur.execute(query)
     return cur.fetchall()   # return results
 
+def try_lock_country(cur, country_code: str) -> bool:
+    cur.execute("SELECT pg_try_advisory_lock(hashtext(%s))", (country_code,))
+    row = cur.fetchone()
+    return bool(row[0]) if row else False
+
+def unlock_country(cur, country_code: str) -> None:
+    cur.execute("SELECT pg_advisory_unlock(hashtext(%s))", (country_code,))
+
 # -------------------------------------------------------------------
 # MAIN PROCESS
 # -------------------------------------------------------------------
 def main():
     total_added = 0
-    
+
+    parser = argparse.ArgumentParser(
+        description="Fetch Ticketmaster events and upsert into staging_ticketmaster.event"
+    )
+    parser.add_argument(
+        "--skip-locked",
+        action="store_true",
+        help="Skip countries locked by another concurrent run"
+    )
+    args = parser.parse_args()
+
     conn = None
     try:
         conn = get_db_connection()
-        logging.info("Starting Ticketmaster → PostgreSQL load...")
-        
+        logging.info("Starting Ticketmaster -> PostgreSQL load...")
+
         supported_country_codes = get_university_alpha_codes(conn.cursor(), supported_countries)
 
-        for country_record in supported_country_codes:
-            country_code = country_record[0]
-            for page in range(PAGE_START, PAGE_END + 1):
-                logging.info(f"Fetching page {page} of {country_code}...")
-                data = fetch_events(page, country_code) # returns JSON
-                if not data:
-                    break
-                
-                #logging.info(f"fetched data for page {data.__len__()}, processing...")
-                # If no events key, skip
-                events = data.get("_embedded", {}).get("events", [])
-                if not events:
-                    logging.warning(f"No events found on page {page}.")
-                    break
+        with conn.cursor() as lock_cur:
+            for country_record in supported_country_codes:
+                country_code = country_record[0]
+                locked = True
+                if args.skip_locked:
+                    locked = try_lock_country(lock_cur, country_code)
+                    if not locked:
+                        logging.info(
+                            f"Skipping country {country_code} (locked by another run)"
+                        )
+                        continue
 
-                # Insert each event in a batch transaction
                 try:
-                    with conn.cursor() as cur:
-                        logging.info(f"Inserting {len(events)} events from page {page}...")
-                        for event in events:
-                            event_id = event.get("id")
-                            if not event_id:
-                                continue
-                            upsert_event_data(cur, event_id, event)
-                            total_added += 1
-                            
-                            # Log progress every 50 events
-                            if total_added % 50 == 0:
-                                logging.info(f"  Progress: {total_added} events inserted so far...")
-                    
-                    conn.commit()
-                    logging.info(f"✓ Page {page} committed ({len(events)} events). Total so far: {total_added}")
-                except Exception as e:
-                    conn.rollback()
-                    logging.error(f"Error processing page {page}: {e}")
-                    continue
+                    for page in range(PAGE_START, PAGE_END + 1):
+                        logging.info(f"Fetching page {page} of {country_code}...")
+                        data = fetch_events(page, country_code) # returns JSON
+                        if not data:
+                            break
 
-                # Be polite to API
-                time.sleep(DELAY_BETWEEN_CALLS)
+                        #logging.info(f"fetched data for page {data.__len__()}, processing...")
+                        # If no events key, skip
+                        events = data.get("_embedded", {}).get("events", [])
+                        if not events:
+                            logging.warning(f"No events found on page {page}.")
+                            break
+
+                        # Insert each event in a batch transaction
+                        try:
+                            with conn.cursor() as cur:
+                                logging.info(f"Inserting {len(events)} events from page {page}...")
+                                for event in events:
+                                    event_id = event.get("id")
+                                    if not event_id:
+                                        continue
+                                    upsert_event_data(cur, event_id, event)
+                                    total_added += 1
+
+                                    # Log progress every 50 events
+                                    if total_added % 50 == 0:
+                                        logging.info(f"  Progress: {total_added} events inserted so far...")
+
+                            conn.commit()
+                            logging.info(f"Page {page} committed ({len(events)} events). Total so far: {total_added}")
+                        except Exception as e:
+                            conn.rollback()
+                            logging.error(f"Error processing page {page}: {e}")
+                            continue
+
+                        # Be polite to API
+                        time.sleep(DELAY_BETWEEN_CALLS)
+                finally:
+                    if args.skip_locked and locked:
+                        unlock_country(lock_cur, country_code)
 
         logging.info(f"Finished. Total rows processed: {total_added}")
-    
+
     finally:
         if conn:
             conn.close()
             logging.info("Database connection closed.")
-
 # -------------------------------------------------------------------
 # ENTRY POINT
 # -------------------------------------------------------------------
