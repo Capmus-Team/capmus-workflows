@@ -8,7 +8,7 @@ on:
         required: false
         default: "true"
   schedule:
-    - cron: "*/15 * * * *" # every 15 minutes
+    - cron: "*/5 * * * *" # every 5 minutes
 
 concurrency:
   group: ticketmaster-image-sync
@@ -68,7 +68,9 @@ jobs:
             );
             core.setOutput(
               "should_run",
-              ageMinutes <= lookbackMinutes ? "false" : "true"
+              (latest.status === "in_progress" || ageMinutes <= lookbackMinutes)
+                ? "false"
+                : "true"
             );
 
       - uses: actions/checkout@v4

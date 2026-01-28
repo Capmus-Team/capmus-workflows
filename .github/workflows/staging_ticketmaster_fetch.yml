@@ -7,6 +7,10 @@ on:
     - cron: "0 2 * * *"  # daily at 02:00 UTC
     - cron: "0 14 * * *"  # 14:00 UTC
 
+concurrency:
+  group: staging-ticketmaster-fetch
+  cancel-in-progress: true
+
 jobs:
   load_ticketmaster:
     runs-on: ubuntu-latest

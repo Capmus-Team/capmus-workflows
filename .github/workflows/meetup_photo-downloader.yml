@@ -13,7 +13,7 @@ jobs:
   run-photo-sync:
     runs-on: ubuntu-latest
     env:
-      DAILY_SYNC_LOOKBACK_MINUTES: 15
+      DAILY_SYNC_LOOKBACK_MINUTES: 30
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +54,7 @@ jobs:
             );
             core.setOutput(
               "should_run",
-              ageMinutes <= lookbackMinutes ? "false" : "true"
+              (latest.status === "in_progress" || ageMinutes <= lookbackMinutes) ? "false" : "true"
             );
 
       - name: Checkout repository
